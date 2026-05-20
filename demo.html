@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>多平台文案适配器 - Content Adapter Demo</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#0a0a1a;color:#e0e0e0;min-height:100vh}
+    .app{max-width:1600px;margin:0 auto;padding:32px 24px}
+    .header{text-align:center;margin-bottom:40px}
+    .header h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+    .header p{color:#777;font-size:15px}
+    .input-section{background:#141428;border-radius:16px;padding:24px;margin-bottom:24px;border:1px solid #252540}
+    .input-section label{display:block;font-size:14px;color:#999;margin-bottom:10px;font-weight:600}
+    .input-row{display:flex;gap:12px;align-items:flex-start}
+    textarea{flex:1;background:#0d0d1f;border:1px solid #303050;border-radius:10px;padding:14px;font-size:15px;color:#e0e0e0;resize:vertical;min-height:120px;font-family:inherit;line-height:1.7;outline:none;transition:border-color .2s}
+    textarea:focus{border-color:#667eea}
+    textarea::placeholder{color:#555}
+    .btn-group{display:flex;flex-direction:column;gap:8px;padding-top:4px}
+    .btn{padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+    .btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(102,126,234,.4)}
+    .btn-secondary{background:#252540;color:#ccc;border:1px solid #353555}
+    .btn-secondary:hover{background:#303050}
+    .analysis-bar{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+    .analysis-tag{background:#1e1e3a;border:1px solid #303050;border-radius:20px;padding:4px 14px;font-size:12px;color:#aaa}
+    .analysis-tag strong{color:#a78bfa}
+    .keyword-tag{background:#2a2a4e;color:#a78bfa;padding:2px 10px;border-radius:12px;font-size:12px}
+    .platform-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .chip{padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;border:2px solid transparent;transition:all .2s;font-weight:500;user-select:none}
+    .chip.active{border-color:currentColor;box-shadow:0 0 12px rgba(255,255,255,.1)}
+    .chip-red{background:rgba(255,36,66,.15);color:#ff4466}.chip-red.active{background:rgba(255,36,66,.3)}
+    .chip-wx{background:rgba(7,193,96,.15);color:#4ade80}.chip-wx.active{background:rgba(7,193,96,.3)}
+    .chip-zh{background:rgba(0,102,255,.15);color:#60a5fa}.chip-zh.active{background:rgba(0,102,255,.3)}
+    .chip-bili{background:rgba(251,114,153,.15);color:#f9a8d4}.chip-bili.active{background:rgba(251,114,153,.3)}
+    .chip-wb{background:rgba(255,130,0,.15);color:#fbbf24}.chip-wb.active{background:rgba(255,130,0,.3)}
+    .chip-dy{background:rgba(254,44,85,.15);color:#fb7185}.chip-dy.active{background:rgba(254,44,85,.3)}
+    .results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:20px;margin-top:24px}
+    .platform-card{background:#141428;border-radius:14px;overflow:hidden;border:1px solid #252540;animation:fadeIn .4s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .card-header{padding:14px 18px;display:flex;align-items:center;gap:8px}
+    .card-header .icon{font-size:22px}
+    .card-header .name{font-size:16px;font-weight:700;color:#fff;flex:1}
+    .card-header .wc{font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.15);color:#fff}
+    .card-body{padding:16px 18px}
+    .titles{margin-bottom:12px}
+    .titles .label{font-size:12px;color:#777;margin-bottom:6px;font-weight:600}
+    .title-item{font-size:13px;color:#ccc;margin-bottom:3px;line-height:1.5}
+    .title-item span{color:#888;margin-right:4px}
+    .content-box{font-size:13px;line-height:1.8;color:#ddd;background:#0d0d1f;padding:12px;border-radius:8px;white-space:pre-wrap;word-break:break-word}
+    .content-box .ht{color:#60a5fa;font-weight:600}
+    .meta-row{display:flex;gap:12px;margin-top:10px;font-size:11px;color:#666;flex-wrap:wrap}
+    .score-bar{display:flex;align-items:center;gap:6px;margin-top:10px}
+    .score-bar .label{font-size:11px;color:#777}
+    .score-dots{display:flex;gap:3px}
+    .score-dot{width:8px;height:8px;border-radius:50%;background:#303050}
+    .score-dot.filled{background:#667eea}
+    .score-dot.warn{background:#fbbf24}
+    .empty-state{text-align:center;padding:80px 20px;color:#555}
+    .empty-state .emoji{font-size:48px;margin-bottom:16px}
+    .empty-state p{font-size:15px;line-height:1.6}
+    .compare-table{margin-top:24px;background:#141428;border-radius:14px;padding:20px;border:1px solid #252540;overflow-x:auto}
+    .compare-table h3{font-size:15px;color:#999;margin-bottom:12px}
+    .compare-table table{width:100%;border-collapse:collapse;font-size:13px}
+    .compare-table th,.compare-table td{padding:8px 12px;text-align:left;border-bottom:1px solid #252540}
+    .compare-table th{color:#777;font-weight:600;font-size:12px}
+    .compare-table td{color:#ccc}
+    .footer{text-align:center;margin-top:40px;padding:20px;color:#444;font-size:12px}
+    @media(max-width:960px){.results-grid{grid-template-columns:1fr}.input-row{flex-direction:column}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>📱 多平台文案适配器</h1>
+    <p>Content Adapter Demo — 输入内容，一键预览6大社交平台风格</p>
+  </div>
+
+  <div class="input-section">
+    <label>📝 输入原始内容</label>
+    <div class="input-row">
+      <textarea id="inputText" placeholder="在这里输入你想适配的文案内容...&#10;&#10;例如：这款新的护肤产品含有透明质酸和烟酰胺成分，能够有效补水保湿，改善肤色不均，让肌肤更加水嫩透亮。经过临床测试，使用28天后，90%的用户反馈皮肤水润度提升了35%。"></textarea>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="adaptAll()">🚀 一键适配</button>
+        <button class="btn btn-secondary" onclick="loadExample('skincare')">💄 护肤示例</button>
+        <button class="btn btn-secondary" onclick="loadExample('ai')">🤖 AI示例</button>
+        <button class="btn btn-secondary" onclick="clearAll()">🗑️ 清空</button>
+      </div>
+    </div>
+    <div class="platform-chips" id="platformChips">
+      <span class="chip chip-red active" data-platform="red" onclick="toggleChip(this)">📕 小红书</span>
+      <span class="chip chip-wx active" data-platform="wx" onclick="toggleChip(this)">💚 公众号</span>
+      <span class="chip chip-zh active" data-platform="zh" onclick="toggleChip(this)">🔵 知乎</span>
+      <span class="chip chip-bili active" data-platform="bili" onclick="toggleChip(this)">📺 B站</span>
+      <span class="chip chip-wb active" data-platform="wb" onclick="toggleChip(this)">🔴 微博</span>
+      <span class="chip chip-dy active" data-platform="dy" onclick="toggleChip(this)">🎵 抖音</span>
+    </div>
+    <div class="analysis-bar" id="analysisBar"></div>
+  </div>
+
+  <div id="resultsArea">
+    <div class="empty-state">
+      <div class="emoji">✍️</div>
+      <p>输入内容后点击「一键适配」<br>即可预览6大社交平台的文案风格</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Content Adapter v3.0 | 基于 MediaCrawler 真实爆款数据分析 | SOLO 技能创作赛参赛作品</p>
+  </div>
+</div>
+
+<script>
+const PLATFORMS = {
+  red: { name: "小红书", icon: "📕", color: "#ff2442", gradient: "linear-gradient(135deg,#ff2442,#ff6b81)", tone: "种草体、闺蜜感", minW: 150, maxW: 300, audience: "18-35岁女性" },
+  wx: { name: "公众号", icon: "💚", color: "#07c160", gradient: "linear-gradient(135deg,#07c160,#4ade80)", tone: "专业温暖、有深度", minW: 800, maxW: 2000, audience: "25-45岁" },
+  zh: { name: "知乎", icon: "🔵", color: "#0066ff", gradient: "linear-gradient(135deg,#0066ff,#60a5fa)", tone: "专业分析、数据支撑", minW: 1000, maxW: 3000, audience: "20-40岁高学历" },
+  bili: { name: "B站", icon: "📺", color: "#fb7299", gradient: "linear-gradient(135deg,#fb7299,#f9a8d4)", tone: "轻松幽默、互动感", minW: 200, maxW: 500, audience: "16-30岁Z世代" },
+  wb: { name: "微博", icon: "🔴", color: "#ff8200", gradient: "linear-gradient(135deg,#ff8200,#fbbf24)", tone: "直接有力、话题性", minW: 50, maxW: 140, audience: "18-40岁" },
+  dy: { name: "抖音", icon: "🎵", color: "#fe2c55", gradient: "linear-gradient(135deg,#161823,#fe2c55)", tone: "口语化、3秒钩子", minW: 50, maxW: 150, audience: "18-35岁" },
+};
+
+const SAMPLES = {
+  skincare: "这款新的护肤产品含有透明质酸和烟酰胺成分，能够有效补水保湿，改善肤色不均，让肌肤更加水嫩透亮。经过临床测试，使用28天后，90%的用户反馈皮肤水润度提升了35%。",
+  ai: "2026年人工智能行业报告显示，全球AI市场规模预计将增长30%，达到5000亿美元。大模型技术的突破是推动增长的核心原因，Agent和RAG成为最热门的技术方向。同时，数据安全和AI伦理问题也引发了广泛讨论，多国政府正在制定相关法规。"
+};
+
+function toggleChip(el) {
+  el.classList.toggle("active");
+}
+
+function getActivePlatforms() {
+  return [...document.querySelectorAll(".chip.active")].map(c => c.dataset.platform);
+}
+
+function loadExample(type) {
+  document.getElementById("inputText").value = SAMPLES[type];
+  adaptAll();
+}
+
+function clearAll() {
+  document.getElementById("inputText").value = "";
+  document.getElementById("analysisBar").innerHTML = "";
+  document.getElementById("resultsArea").innerHTML = '<div class="empty-state"><div class="emoji">✍️</div><p>输入内容后点击「一键适配」<br>即可预览6大社交平台的文案风格</p></div>';
+}
+
+function countChars(text) {
+  return [...text].filter(c => /[\u4e00-\u9fff\w]/.test(c)).length;
+}
+
+function adaptAll() {
+  const text = document.getElementById("inputText").value.trim();
+  if (!text) return;
+
+  const platforms = getActivePlatforms();
+  if (platforms.length === 0) { alert("请至少选择一个平台"); return; }
+
+  showAnalysis(text);
+
+  const resultsArea = document.getElementById("resultsArea");
+  let html = '<div class="results-grid">';
+
+  for (const code of platforms) {
+    const p = PLATFORMS[code];
+    const adapted = adaptText(text, code);
+    const wc = countChars(adapted.content);
+    const titles = adapted.titles;
+    const inRange = wc >= p.minW && wc <= p.maxW;
+    const score = calcScore(text, adapted.content, code);
+
+    html += `<div class="platform-card" style="animation-delay:${platforms.indexOf(code)*0.08}s">
+      <div class="card-header" style="background:${p.gradient}">
+        <span class="icon">${p.icon}</span>
+        <span class="name">${p.name}</span>
+        <span class="wc">${wc}字 ${inRange?"✅":"⚠️"}</span>
+      </div>
+      <div class="card-body">
+        <div class="titles">
+          <div class="label">📌 推荐标题</div>
+          ${titles.map((t,i) => `<div class="title-item"><span>${i+1}.</span>${escHtml(t)}</div>`).join("")}
+        </div>
+        <div class="label" style="font-size:12px;color:#777;margin-bottom:6px;font-weight:600">📝 文案正文</div>
+        <div class="content-box">${formatContent(adapted.content)}</div>
+        <div class="meta-row">
+          <span>语气：${p.tone}</span>
+          <span>受众：${p.audience}</span>
+          <span>推荐：${p.minW}-${p.maxW}字</span>
+        </div>
+        <div class="score-bar">
+          <span class="label">适配评分</span>
+          <div class="score-dots">${renderScore(score)}</div>
+          <span style="font-size:11px;color:#888">${score}/7</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  html += "</div>";
+
+  if (platforms.length > 1) {
+    html += renderCompareTable(text, platforms);
+  }
+
+  resultsArea.innerHTML = html;
+}
+
+function showAnalysis(text) {
+  const wc = countChars(text);
+  const keywords = extractKeywords(text);
+  const sentiment = detectSentiment(text);
+  const type = detectType(text);
+
+  const bar = document.getElementById("analysisBar");
+  bar.innerHTML = `
+    <span class="analysis-tag">类型：<strong>${type}</strong></span>
+    <span class="analysis-tag">情感：<strong>${sentiment}</strong></span>
+    <span class="analysis-tag">字数：<strong>${wc}</strong></span>
+    <span class="analysis-tag">关键词：${keywords.map(k => `<span class="keyword-tag">${escHtml(k)}</span>`).join(" ")}</span>
+  `;
+}
+
+function extractKeywords(text) {
+  const terms = ["透明质酸","烟酰胺","玻尿酸","水杨酸","视黄醇","A醇","神经酰胺","角鲨烷","胜肽","胶原蛋白",
+    "人工智能","大数据","云计算","区块链","大模型","GPT","Agent","RAG","多模态",
+    "护肤","美妆","防晒","美白","保湿","补水","抗老","精华","面霜","面膜",
+    "市场","行业","趋势","报告","数据","研究","分析",
+    "活动","优惠","免费","限时","福利","推荐","测评","攻略","干货",
+    "效率","工具","App","自动化","穿搭","健身","职场","创业","旅行","美食"];
+  return terms.filter(t => text.includes(t)).slice(0, 6);
+}
+
+function detectSentiment(text) {
+  const pos = ["好","棒","优秀","推荐","值得","惊喜","提升","改善","有效","绝了","增长","突破"];
+  const neg = ["差","烂","不好","失望","糟糕","麻烦","失败","后悔","降低","恶化"];
+  let ps = pos.filter(w => text.includes(w)).length;
+  let ns = neg.filter(w => text.includes(w)).length;
+  if (ps > ns * 1.5) return "积极正面";
+  if (ns > ps * 1.5) return "消极负面";
+  return "中性客观";
+}
+
+function detectType(text) {
+  const types = [
+    { name: "产品介绍", words: ["含有","成分","效果","功能","特点","新品","发布","升级"] },
+    { name: "活动宣传", words: ["活动","报名","截止","奖品","抽奖","福利","限时","优惠"] },
+    { name: "知识科普", words: ["原理","机制","研究","报告","分析","趋势","如何","为什么"] },
+    { name: "观点分享", words: ["认为","觉得","看法","建议","经验","心得","总结","思考"] },
+  ];
+  let best = { name: "综合内容", score: 0 };
+  for (const t of types) {
+    const score = t.words.filter(w => text.includes(w)).length;
+    if (score > best.score) best = { name: t.name, score };
+  }
+  return best.name;
+}
+
+function adaptText(text, platform) {
+  const sentences = text.split(/[。！？\n]+/).map(s => s.trim()).filter(s => s.length > 5);
+  const keywords = extractKeywords(text);
+  const kw = keywords[0] || "这个";
+  const topics = keywords.slice(0, 3);
+
+  const titles = generateTitles(kw, topics, platform);
+  let content = "";
+
+  switch (platform) {
+    case "red":
+      content = adaptRed(text, sentences, kw, topics);
+      break;
+    case "wx":
+      content = adaptWx(text, sentences, kw, topics);
+      break;
+    case "zh":
+      content = adaptZh(text, sentences, kw, topics);
+      break;
+    case "bili":
+      content = adaptBili(text, sentences, kw, topics);
+      break;
+    case "wb":
+      content = adaptWb(text, sentences, kw, topics);
+      break;
+    case "dy":
+      content = adaptDy(text, sentences, kw, topics);
+      break;
+  }
+
+  return { titles, content };
+}
+
+function generateTitles(kw, topics, platform) {
+  const templates = {
+    red: [`绝了！${kw} 这样用真的太香了🔥`, `后悔没早知道！${kw} 的正确打开方式`, `姐妹们！${kw} 真的闭眼入😭`],
+    wx: [`关于${kw}，你需要知道的几件事`, `${kw}真的有用吗？专业人士说了实话`, `那些${kw}的人，都在坚持这3个习惯`],
+    zh: [`如何评价${kw}？从专业角度全面分析`, `${kw}真的有用吗？数据说话`, `深度解析：${kw}的前世今生`],
+    bili: [`家人们谁懂啊！${kw} 真的太绝了😂`, `笑死！关于${kw} 的那些事`, `${kw}｜看完你就懂了（建议收藏）`],
+    wb: [`#${kw}# 最新消息来了！`, `#${kw}# 你关注了吗？`, `重磅！关于${kw}的最新动态`],
+    dy: [`等等！你是不是一直以为${kw}？`, `99%的人不知道！${kw}的真相`, `3个数据看懂${kw}的趋势`],
+  };
+  return templates[platform] || templates.wx;
+}
+
+function adaptRed(text, sentences, kw, topics) {
+  let r = `✨姐妹们！${kw} 真的要吹爆！\n\n`;
+  const emojis = ["💡","📌","💖","✨","🌟"];
+  sentences.slice(0, 3).forEach((s, i) => {
+    let line = s.length > 30 ? s.slice(0, 30) + "..." : s;
+    r += `${emojis[i] || "✨"} ${line}\n\n`;
+  });
+  r += `你们有体验过${kw}吗？评论区告诉我～\n\n`;
+  r += topics.map(t => `#${t}#`).join(" ");
+  return r;
+}
+
+function adaptWx(text, sentences, kw, topics) {
+  let r = "";
+  if (sentences[0]) r += sentences[0] + "\n\n——\n\n";
+  r += "## 一、核心要点\n\n";
+  sentences.slice(1, 4).forEach((s, i) => { r += `${i+1}. ${s}\n\n`; });
+  r += "## 二、深入分析\n\n";
+  if (sentences.length > 3) sentences.slice(3).forEach(s => { r += s + "\n\n"; });
+  r += "## 三、写在最后\n\n希望以上内容对你有所启发。欢迎在评论区交流。";
+  return r;
+}
+
+function adaptZh(text, sentences, kw, topics) {
+  let r = `### 先说结论\n\n`;
+  if (sentences[0]) r += sentences[0] + "\n\n";
+  r += "### 详细分析\n\n";
+  sentences.slice(1, 4).forEach((s, i) => {
+    r += `**第${i+1}点**：${s}\n\n`;
+    if (i === 0) r += "从数据来看，这是一个值得关注的趋势。\n\n";
+  });
+  r += "### 建议\n\n1. 保持关注行业动态\n2. 结合自身实际做判断\n3. 多与同行交流\n\n以上分析基于公开数据，仅供参考。";
+  return r;
+}
+
+function adaptBili(text, sentences, kw, topics) {
+  let r = `家人们谁懂啊！关于${kw} 这件事，我真的有话说😂\n\n`;
+  if (sentences[0]) {
+    let first = sentences[0].length > 25 ? sentences[0].slice(0, 25) + "..." : sentences[0];
+    r += `先说重点👉 ${first}\n\n`;
+  }
+  r += "### 详细来说\n\n";
+  sentences.slice(1, 3).forEach(s => {
+    let line = s.length > 35 ? s.slice(0, 35) + "..." : s;
+    r += `${line}\n\n`;
+  });
+  r += `(真的离谱😂)\n\n觉得有用的话一键三连哦～ (๑•̀ㅂ•́)و✧`;
+  return r;
+}
+
+function adaptWb(text, sentences, kw, topics) {
+  const tags = topics.slice(0, 2).map(t => `#${t}#`).join(" ");
+  let r = tags + "\n";
+  if (sentences[0]) {
+    let first = sentences[0].length > 60 ? sentences[0].slice(0, 60) + "..." : sentences[0];
+    r += first;
+  }
+  if (countChars(r) > 130) r = r.slice(0, 130) + "...";
+  return r;
+}
+
+function adaptDy(text, sentences, kw, topics) {
+  let r = `等等！你是不是一直以为${kw}很简单？（其实不是）\n\n真相是这样的👇\n\n`;
+  sentences.slice(0, 3).forEach((s, i) => {
+    let line = s.length > 25 ? s.slice(0, 25) + "..." : s;
+    r += `第${i+1}步：${line}\n`;
+  });
+  r += `\n觉得有用的话点个赞，关注我学更多干货～`;
+  return r;
+}
+
+function calcScore(original, adapted, platform) {
+  let score = 0;
+  const p = PLATFORMS[platform];
+  const wc = countChars(adapted);
+  if (wc >= p.minW * 0.5 && wc <= p.maxW * 1.5) score++;
+  if (adapted.length > 20) score++;
+  if (platform === "red" && /[✨🔥💡📌💖🌟]/.test(adapted)) score++;
+  if (platform === "wx" && /##/.test(adapted)) score++;
+  if (platform === "zh" && /\*\*第/.test(adapted)) score++;
+  if (platform === "bili" && /[😂🤣]/.test(adapted)) score++;
+  if (platform === "wb" && /#.*#/.test(adapted)) score++;
+  if (platform === "dy" && /等等|真相|👇/.test(adapted)) score++;
+  if (adapted.includes("评论区") || adapted.includes("关注") || adapted.includes("点赞")) score++;
+  return Math.min(score, 7);
+}
+
+function renderScore(score) {
+  let dots = "";
+  for (let i = 0; i < 7; i++) {
+    dots += `<div class="score-dot ${i < score ? (i < 4 ? 'filled' : 'filled') : ''}"></div>`;
+  }
+  return dots;
+}
+
+function renderCompareTable(text, platforms) {
+  let html = '<div class="compare-table"><h3>📊 多平台对比</h3><table><tr><th>维度</th>';
+  platforms.forEach(c => { html += `<th>${PLATFORMS[c].icon} ${PLATFORMS[c].name}</th>`; });
+  html += '</tr>';
+  const rows = [
+    { label: "语气", get: c => PLATFORMS[c].tone.split("、")[0] },
+    { label: "字数范围", get: c => `${PLATFORMS[c].minW}-${PLATFORMS[c].maxW}字` },
+    { label: "受众", get: c => PLATFORMS[c].audience },
+  ];
+  rows.forEach(row => {
+    html += `<tr><td>${row.label}</td>`;
+    platforms.forEach(c => { html += `<td>${row.get(c)}</td>`; });
+    html += '</tr>';
+  });
+  html += '</table></div>';
+  return html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function formatContent(text) {
+  let html = escHtml(text);
+  html = html.replace(/## (.+)/g, '<strong style="color:#eee">$1</strong>');
+  html = html.replace(/### (.+)/g, '<strong style="color:#ddd">$1</strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/#([^#\s]+)#/g, '<span class="ht">#$1#</span>');
+  return html;
+}
+</script>
+</body>
+</html>
